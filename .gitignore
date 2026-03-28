@@ -25,3 +25,7 @@ docs/site/
 Manifest.toml
 
 profile.*
+
+# wip
+sandbox.jl
+test.jl

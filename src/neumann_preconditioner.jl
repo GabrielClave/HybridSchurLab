@@ -4,14 +4,14 @@ using Polyester
 using Base.Threads: Atomic, atomic_add!
 using IncompleteLU
 
-function setup_2lp(A_p::AbstractMatrix{T}, int_indices, g_indices, schur_ops::SchurOperator{T}, ::Type{W}=Float32; τ = 0.01, ε=1e-9) where {T, W}
+function setup_2lp(A_p::AbstractMatrix{T}, int_indices, g_indices, schur_ops::SchurOperator{T}, ::Type{W}=Float32, ::Type{V}=Int32; τ = 0.01, ε=1e-9) where {T, W, V}
     lck = ReentrantLock()
     n_parts = length(int_indices)
     n_gamma = length(g_indices)
     
     # store one LU factorization per subdomain "Si⁻¹"
     # Each LU is for the matrix [A_ii  A_ig ; A_gi  A_gg_i]
-    dummy_matrix = sparse(one(W)*I, 2, 2)
+    dummy_matrix = sparse(V[1, 2], V[1, 2], W[1.0, 1.0], 2, 2)
     F_type = typeof(ilu(dummy_matrix, τ = τ))
     local_LUs = Vector{F_type}(undef, n_parts)
 
@@ -65,7 +65,7 @@ function setup_2lp(A_p::AbstractMatrix{T}, int_indices, g_indices, schur_ops::Sc
         if is_floating Ai[1, 1] += one(T) end
 
         # factorization of Ai
-        Ai_prec = W.(Ai) # factorization of local Ai in lower precision
+        Ai_prec = SparseMatrixCSC{W, V}(Ai) # factorization of local Ai in lower precision
         local_LUs[i] = ilu(Ai_prec, τ= τ)
 
         # local coarse basis Z_i (Size: n_local_interface x n_neighbors) 
